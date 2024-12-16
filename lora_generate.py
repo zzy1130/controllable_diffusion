@@ -6,6 +6,7 @@ from PIL import Image
 from transformers import pipeline
 import numpy as np
 from clip_inter import ImageInterrogator
+import argparse
 
 # pipe = DiffusionPipeline.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0",
 #                                          variant="fp16",
@@ -50,6 +51,10 @@ from clip_inter import ImageInterrogator
 # generator = torch.manual_seed(1)
 # images = pipe(prompt, num_inference_steps=20, generator=generator, controlnet=controlnet, image=control_image).images[0]
 # images.save('lora_output.png')
+parser = argparse.ArgumentParser(description="Generate images using Controlnet")
+parser.add_argument(
+    "--image_path", type=str, default='', help="Condition choice"
+)
 
 class ImageGenerator:
     def __init__(self, model_name="stabilityai/stable-diffusion-xl-base-1.0", device="cuda"):
@@ -104,7 +109,9 @@ class ImageGenerator:
 
 # Example usage
 if __name__ == "__main__":
-    image_path = "/userhome/30/zyzhong2/controllable_diffussion/images/IMG_47CF507AEBD7-1.png"
+    args = parser.parse_args()
+    image_path = args.image_path
+    # image_path = "/userhome/30/zyzhong2/controllable_diffussion/images/IMG_47CF507AEBD7-1.png"
     interrogator = ImageInterrogator()
     interrogator.load_image(image_path)
     prompt = interrogator.interrogate()
