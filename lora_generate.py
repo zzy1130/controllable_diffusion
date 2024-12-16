@@ -115,6 +115,7 @@ if __name__ == "__main__":
     interrogator = ImageInterrogator()
     interrogator.load_image(image_path)
     prompt = interrogator.interrogate()
+    prompt = "Chinese Ink, " + prompt + ", 8k"
     print(prompt)
     # prompt = "Chinese Ink, A cat with a box and a knife in his hand, white and orange breastplate, wearing torn clothes, full body mascot, inspired by Dong Kingman, bassist, brown pants, artist rendition, aliased, artistic rendition, instruments, block head, trading card, by Noami, a character portrait, 8k"
     generator = ImageGenerator()
