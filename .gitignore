@@ -1,6 +1,5 @@
 #Cache folder
 .cache/
-.out/
-.images/
-.control_image/
 *.safetensors
+*.png
+*.jpeg
