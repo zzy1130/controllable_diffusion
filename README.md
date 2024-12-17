@@ -29,9 +29,27 @@ Example implementation:
 ```
 python diff_sampling.py --num_steps 50 --guidance_scale 7 --scheduler DDIM
 ```
-num_steps is the number of sampling steps, guidance_scale defines the guidance scale, and scheduler defines the scheduler (you can choose from DDIM, DPM, LMS, Euler, DDPM)
+--num_steps is the number of sampling steps, --guidance_scale defines the guidance scale, and --scheduler defines the scheduler (you can choose from DDIM, DPM, LMS, Euler, DDPM)
 
 ### Task 3 and 4: ControlNet with Different Control Signals
+Single Control:
+```
+python controlnet.py --condition canny
+```
+--condition specifies the condition choice. You can choose among canny, depth, normal_map, pose, scribble, hed, and pix2pix.
+Multiple controls:
+```
+python controlnet.py --multiple_condition canny+pose
+```
+--multiple_control can accept at most two conditions separated by '+'
+What should be noted is that you should specify the image file path for control signals in the code.
+
+### Task 5: Image-text-image Generation with LoRA
+Example:
+```
+python lora_generate.py --image_path ./images/IMG_47CF507AEBD7-1.png
+```
+--image_path specifies the path to the original image. When the path is passed into image_path, the program will go through all steps automatically to generate the final output.
 -- --
 
 After this, all have been done. Thanks for your patience!
