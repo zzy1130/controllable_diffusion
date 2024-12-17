@@ -13,7 +13,7 @@
 - System
   - Linux
 
-## Commands to run code/>
+## Commands to run code
 
 ### Task 1: Image Generation with Stable Diffusion
 
