@@ -28,7 +28,7 @@ else:
 for condition in conditions:
     if condition == 'canny':
         # Specify the path to your local image
-        image_path = "/userhome/30/zyzhong2/diffussion/images/depth_image.png"  # Update with your image path
+        image_path = "/userhome/30/zyzhong2/controllable_diffusion/images/beauty.png"  # Update with your image path
         # Load the image
         image = Image.open(image_path)
         image = np.array(image)
@@ -42,7 +42,7 @@ for condition in conditions:
         image = image[:, :, None]
         image = np.concatenate([image, image, image], axis=2)
         image = Image.fromarray(image)
-        image = image.resize(target_size)
+        # image = image.resize(target_size)
         image.save('/userhome/30/zyzhong2/diffussion/control_image/canny_control.png')
         controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", torch_dtype=torch.float16)
         control_images.append(image)
@@ -57,12 +57,12 @@ for condition in conditions:
         image = processor(image, hand_and_face=True, preprocessor=None)
         image.save("/userhome/30/zyzhong2/diffussion/control_image/pose_control.png")
         controlnet = ControlNetModel.from_pretrained(checkpoint, torch_dtype=torch.float16)
-        image = image.resize(target_size)
+        # image = image.resize(target_size)
         control_images.append(image)
         controlnets.append(controlnet)
     elif condition == 'depth':
         # Specify the path to your local image
-        image_path = "/userhome/30/zyzhong2/diffussion/images/depth_image.png"  # Update with your image path
+        image_path = "/userhome/30/zyzhong2/controllable_diffusion/images/beauty.png"  # Update with your image path
         # Load the image
         image = Image.open(image_path)
         depth_estimator = pipeline('depth-estimation')
@@ -71,16 +71,16 @@ for condition in conditions:
         image = image[:, :, None]
         image = np.concatenate([image, image, image], axis=2)
         image = Image.fromarray(image)
-        image.save('/userhome/30/zyzhong2/diffussion/control_image/depth_control.png')
+        image.save('/userhome/30/zyzhong2/controllable_diffusion/control_image/depth_control.png')
         controlnet = ControlNetModel.from_pretrained(
             "lllyasviel/sd-controlnet-depth", torch_dtype=torch.float16
         )
-        image = image.resize(target_size)
+        # image = image.resize(target_size)
         control_images.append(image)
         controlnets.append(controlnet)
     elif condition == 'normal_map':
         # Specify the path to your local image
-        image_path = "/userhome/30/zyzhong2/diffussion/images/crowd_image.png"  # Update with your image path
+        image_path = "/userhome/30/zyzhong2/controllable_diffusion/images/crowd_image.png"  # Update with your image path
         # Load the image
         image = Image.open(image_path)
         depth_estimator = pipeline("depth-estimation", model ="Intel/dpt-hybrid-midas" )
@@ -111,7 +111,7 @@ for condition in conditions:
         controlnet = ControlNetModel.from_pretrained(
             "fusing/stable-diffusion-v1-5-controlnet-normal", torch_dtype=torch.float16
         )
-        image.save('/userhome/30/zyzhong2/diffussion/control_image/normal_map_control.png')
+        image.save('/userhome/30/zyzhong2/controllable_diffusion/control_image/normal_map_control.png')
         image = image.resize(target_size)
         control_images.append(image)
         controlnets.append(controlnet)
@@ -130,12 +130,12 @@ for condition in conditions:
         controlnets.append(controlnet)
     elif condition == 'hed':
         checkpoint = "lllyasviel/control_v11p_sd15_softedge"
-        image = Image.open('/userhome/30/zyzhong2/diffussion/images/taylor.png')
+        image = Image.open('/userhome/30/zyzhong2/controllable_diffusion/images/beauty.png')
         processor = HEDdetector.from_pretrained('lllyasviel/Annotators')
         processor = PidiNetDetector.from_pretrained('lllyasviel/Annotators')
         control_image = processor(image, safe=True)
-        control_image.save("/userhome/30/zyzhong2/diffussion/images/control_hed.png")
-        control_image = control_image.resize(target_size)
+        control_image.save("/userhome/30/zyzhong2/controllable_diffusion/control_image/control_hed.png")
+        # control_image = control_image.resize(target_size)
         control_images.append(control_image)
         controlnet = ControlNetModel.from_pretrained(checkpoint, torch_dtype=torch.float16)
         controlnets.append(controlnet)
@@ -162,16 +162,25 @@ generator = torch.manual_seed(42)
 # control_strength = 0.1  # Lower this value to reduce control from the Canny edges
 # guidance_scale = 1  # Adjust as needed
 if condition[0] != 'pix2pix':
-    prompt = "A sweat and beautiful couple, Disney style, high appearance level, gorgeous, 8k, detailed"
+    prompt = "A portrait of a woman in DisyneyLand, high appearance level, gorgeous, 8k, detailed"
     inference_step = 20
 else:
     prompt = "Make it become a Chinese artwork of a cat with a box in his hand, white and orange breastplate, wearina torn clothes,full body mascot, inspired by Dong Kingman, bassist, brown pants, artist rendition, aliased, artistic rendition,instruments, block head, trading card, by Noami"
     inference_step = 30
+base_size = control_images[0].size
+
+# Resize all other images in the list
+resized_images = []
+for img in control_images:
+    # Resize the image to match the base size
+    resized_img = img.resize(base_size)
+    resized_images.append(resized_img)
+
 # Generate the image
 out_image = pipe(
     prompt, 
     num_inference_steps=inference_step, 
-    image=control_images,
+    image=resized_images,
     controlnet = controlnets,
     negative_prompt = "monochrome, lowres, bad anatomy, worst quality, low quality, ugly",
     # control_strength=control_strength,  # Adjust control strength
@@ -179,6 +188,6 @@ out_image = pipe(
 ).images[0]
 
 if not args.multiple_condition:
-    out_image.save(f"/userhome/30/zyzhong2/diffussion/out/controlnet_{conditions[0]}.png")
+    out_image.save(f"/userhome/30/zyzhong2/controllable_diffusion/out/controlnet_{conditions[0]}.png")
 else:
-    out_image.save(f"/userhome/30/zyzhong2/diffussion/out/controlnet_{args.multiple_condition}.png")
+    out_image.save(f"/userhome/30/zyzhong2/controllable_diffusion/out/controlnet_{args.multiple_condition}.png")

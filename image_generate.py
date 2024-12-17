@@ -5,7 +5,8 @@ pipeline = DiffusionPipeline.from_pretrained("stable-diffusion-v1-5/stable-diffu
 pipeline.to("cuda")
 
 # Generate the image
-generated_image = pipeline("a digital photograph of a fluffy gray and white English shorthair cat, 4k, detailed, full-body.").images[0]
+generated_image = pipeline(prompt="A digital illustration of a cozy indoor scene, 8K, featuring a modern rocking chair with a stylish leather design. A fluffy gray and white cat is lying beneath the chair. The setting includes a soft, textured rug and a warm ambiance, with houseplants and a fireplace in the background",
+                           negative_prompt="monochrome, lowres, bad anatomy, worst quality, low quality, ugly, cat missing").images[0]
 
 # Optionally, save the image
-generated_image.save("/images/task1_gen.png")
+generated_image.save("/userhome/30/zyzhong2/controllable_diffusion/out/task1_gen.png")
