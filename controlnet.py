@@ -112,7 +112,7 @@ for condition in conditions:
             "fusing/stable-diffusion-v1-5-controlnet-normal", torch_dtype=torch.float16
         )
         image.save('/userhome/30/zyzhong2/controllable_diffusion/control_image/normal_map_control.png')
-        image = image.resize(target_size)
+        # image = image.resize(target_size)
         control_images.append(image)
         controlnets.append(controlnet)
     elif condition == 'scribble':
@@ -125,7 +125,7 @@ for condition in conditions:
         control_image = processor(image, scribble=True)
         control_image.save("/userhome/30/zyzhong2/diffussion/images/scribble_control.png")
         controlnet = ControlNetModel.from_pretrained(checkpoint, torch_dtype=torch.float16)
-        control_image = control_image.resize(target_size)
+        # control_image = control_image.resize(target_size)
         control_images.append(control_image)
         controlnets.append(controlnet)
     elif condition == 'hed':
@@ -146,7 +146,7 @@ for condition in conditions:
         image = Image.open(image_path)
         checkpoint = "lllyasviel/control_v11e_sd15_ip2p"
         controlnet = ControlNetModel.from_pretrained(checkpoint, torch_dtype=torch.float16)
-        image = image.resize(target_size)
+        # image = image.resize(target_size)
         control_images.append(image)
         controlnets.append(controlnet)
 
