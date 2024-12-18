@@ -1,12 +1,15 @@
 import torch
-from diffusers import DiffusionPipeline, LCMScheduler, ControlNetModel
+from diffusers import DiffusionPipeline, LCMScheduler, ControlNetModel, AutoencoderKL, StableDiffusionXLControlNetPipeline
 import matplotlib.pyplot as plt
+from transformers import DPTFeatureExtractor, DPTForDepthEstimation, DPTImageProcessor
 from controlnet_aux import OpenposeDetector, HEDdetector, PidiNetDetector
 from PIL import Image
 from transformers import pipeline
 import numpy as np
 from clip_inter import ImageInterrogator
 import argparse
+import cv2
+
 
 parser = argparse.ArgumentParser(description="Generate images using Controlnet")
 parser.add_argument(
@@ -16,12 +19,25 @@ parser.add_argument(
     "--condition", type=str, default='soft_edge', help="Condition choice"
 )
 class ImageGenerator:
-    def __init__(self, model_name="stabilityai/stable-diffusion-xl-base-1.0", device="cuda"):
+    def __init__(self, model_name="stabilityai/stable-diffusion-xl-base-1.0", device="cuda",method='canny'):
+        if method == 'soft_edge':
+            checkpoint = "lllyasviel/control_v11p_sd15_softedge"
+            controlnet = ControlNetModel.from_pretrained(checkpoint, torch_dtype=torch.float16)
+        elif method == 'canny':
+            checkpoint = "diffusers/controlnet-canny-sdxl-1.0"
+            controlnet = ControlNetModel.from_pretrained(checkpoint, torch_dtype=torch.float16)
+        elif method == 'depth':
+            controlnet = ControlNetModel.from_pretrained(
+                "diffusers/controlnet-canny-sdxl-1.0", torch_dtype=torch.float16
+            )
+        vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)
         # Initialize the diffusion pipeline
-        self.pipe = DiffusionPipeline.from_pretrained(
+        self.pipe = StableDiffusionXLControlNetPipeline.from_pretrained(
             model_name,
+            vae=vae,
             variant="fp16",
-            torch_dtype=torch.float16
+            torch_dtype=torch.float16,
+            controlnet=controlnet
         ).to(device)
 
         # Set the scheduler
@@ -40,13 +56,40 @@ class ImageGenerator:
         control_image = Image.open(image_path)
 
         if method == 'depth':
-            depth_estimator = pipeline('depth-estimation')
-            control_image = depth_estimator(control_image)['depth']
+            depth_estimator = DPTForDepthEstimation.from_pretrained("Intel/dpt-hybrid-midas").to("cuda")
+            feature_extractor = DPTImageProcessor.from_pretrained("Intel/dpt-hybrid-midas")
+            # depth_estimator = pipeline('depth-estimation')
+            # control_image = depth_estimator(control_image)['depth']
+            # control_image = np.array(control_image)
+            # control_image = control_image[:, :, None]
+            # control_image = np.concatenate([control_image, control_image, control_image], axis=2)
+            # control_image = Image.fromarray(control_image)
+            image = Image.open(image_path)
+            image = feature_extractor(images=image, return_tensors="pt").pixel_values.to("cuda")
+            with torch.no_grad(), torch.autocast("cuda"):
+                depth_map = depth_estimator(image).predicted_depth
+            depth_map = torch.nn.functional.interpolate(
+                depth_map.unsqueeze(1),
+                size=(1024, 1024),
+                mode="bicubic",
+                align_corners=False,
+            )
+            depth_min = torch.amin(depth_map, dim=[1, 2, 3], keepdim=True)
+            depth_max = torch.amax(depth_map, dim=[1, 2, 3], keepdim=True)
+            depth_map = (depth_map - depth_min) / (depth_max - depth_min)
+            image = torch.cat([depth_map] * 3, dim=1)
+
+            image = image.permute(0, 2, 3, 1).cpu().numpy()[0]
+            image = Image.fromarray((image * 255.0).clip(0, 255).astype(np.uint8))
+            image.save("/userhome/30/zyzhong2/controllable_diffusion/control_image/control_depth.png")
+            return image
+        elif method == 'canny':
             control_image = np.array(control_image)
+            control_image = cv2.Canny(control_image, 100, 200)
             control_image = control_image[:, :, None]
             control_image = np.concatenate([control_image, control_image, control_image], axis=2)
             control_image = Image.fromarray(control_image)
-            control_image.save("/userhome/30/zyzhong2/controllable_diffusion/control_image/control_depth.png")
+            control_image.save("/userhome/30/zyzhong2/controllable_diffusion/control_image/control_canny.png")
             return control_image
         elif method == 'soft_edge':
             processor = HEDdetector.from_pretrained('lllyasviel/Annotators')
@@ -57,20 +100,12 @@ class ImageGenerator:
         # Additional methods (e.g., 'pose', 'scribble') can be added here as needed
 
     def generate_image(self, prompt, control_image, method='soft_edge'):
-        # Load the ControlNet model
-        if method == 'soft_edge':
-            checkpoint = "lllyasviel/control_v11p_sd15_softedge"
-            controlnet = ControlNetModel.from_pretrained(checkpoint, torch_dtype=torch.float16)
-        else:
-            controlnet = ControlNetModel.from_pretrained(
-                "lllyasviel/sd-controlnet-depth", torch_dtype=torch.float16
-            )
         # Combine LoRAs
         self.pipe.set_adapters(["lcm", "Chinese Ink"], adapter_weights=[1.0, 0.8])
         # Generate the image
-        generator = torch.manual_seed(42)
+        generator = torch.manual_seed(1)
         negative_prompt = "monochrome, lowres, bad anatomy, worst quality, low quality, ugly, letter in the image"
-        images = self.pipe(prompt, num_inference_steps=20, generator=generator, controlnet=controlnet, negative_prompt=negative_prompt, image=control_image).images[0]
+        images = self.pipe(prompt, num_inference_steps=20, generator=generator, negative_prompt=negative_prompt, image=control_image, controlnet_conditioning_scale=0.667).images[0]
         
         return images
 
@@ -85,7 +120,7 @@ if __name__ == "__main__":
     prompt = interrogator.interrogate()
     prompt = "Chinese Ink, " + prompt + ", 8k"
     print(prompt)
-    generator = ImageGenerator()
+    generator = ImageGenerator(method=method)
     control_image = generator.load_control_image(image_path, method=method)
     output_image = generator.generate_image(prompt, control_image, method=method)
     output_image.save('/userhome/30/zyzhong2/controllable_diffusion/out/lora_output.png')

@@ -47,9 +47,10 @@ What should be noted is that you should specify the image file path for control 
 ### Task 5: Image-text-image Generation with LoRA
 Example:
 ```
-python lora_generate.py --image_path ./images/IMG_47CF507AEBD7-1.png
+python lora_generate.py --image_path ./images/IMG_47CF507AEBD7-1.png --condition canny
 ```
 --image_path specifies the path to the original image. When the path is passed into image_path, the program will go through all steps automatically to generate the final output.
+--canny specifies the signal used for ControlNet
 -- --
 
 After this, all have been done. Thanks for your patience!
