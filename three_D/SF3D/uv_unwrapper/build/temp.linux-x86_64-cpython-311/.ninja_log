@@ -1,0 +1,5 @@
+# ninja log v5
+3	2365	1745062185351923956	/userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/uv_unwrapper/build/temp.linux-x86_64-cpython-311/uv_unwrapper/csrc/bvh.o	45607fdc25a3947b
+5	2446	1745062185431925307	/userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/uv_unwrapper/build/temp.linux-x86_64-cpython-311/uv_unwrapper/csrc/intersect.o	40904a09ef6921f5
+5	50941	1745062233872743541	/userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/uv_unwrapper/build/temp.linux-x86_64-cpython-311/uv_unwrapper/csrc/unwrapper.o	c545b8121bdd455b
+2076	36860	1745065783664711869	/userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/uv_unwrapper/build/temp.linux-x86_64-cpython-311/uv_unwrapper/csrc/unwrapper.o	c545b8121bdd455b

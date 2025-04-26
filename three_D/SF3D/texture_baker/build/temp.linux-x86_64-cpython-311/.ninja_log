@@ -1,0 +1,3 @@
+# ninja log v5
+3	39821	1745065667038741558	/userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/texture_baker/build/temp.linux-x86_64-cpython-311/texture_baker/csrc/baker.o	c197cac1f995ebeb
+4	108621	1745065735819903569	/userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/texture_baker/build/temp.linux-x86_64-cpython-311/texture_baker/csrc/baker_kernel.o	416383ce2ba0af5

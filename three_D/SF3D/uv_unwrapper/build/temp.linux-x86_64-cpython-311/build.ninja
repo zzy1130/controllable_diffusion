@@ -1,0 +1,26 @@
+ninja_required_version = 1.3
+cxx = c++
+
+cflags = -pthread -B /userhome/30/zyzhong2/anaconda3/compiler_compat -DNDEBUG -fwrapv -O2 -Wall -fPIC -O2 -isystem /userhome/30/zyzhong2/anaconda3/include -fPIC -O2 -isystem /userhome/30/zyzhong2/anaconda3/include -fPIC -I/userhome/30/zyzhong2/anaconda3/lib/python3.11/site-packages/torch/include -I/userhome/30/zyzhong2/anaconda3/lib/python3.11/site-packages/torch/include/torch/csrc/api/include -I/userhome/30/zyzhong2/anaconda3/lib/python3.11/site-packages/torch/include/TH -I/userhome/30/zyzhong2/anaconda3/lib/python3.11/site-packages/torch/include/THC -I/userhome/30/zyzhong2/anaconda3/include/python3.11 -c
+post_cflags = -O3 -fdiagnostics-color=always -fopenmp -march=native -DTORCH_API_INCLUDE_EXTENSION_H '-DPYBIND11_COMPILER_TYPE="_gcc"' '-DPYBIND11_STDLIB="_libstdcpp"' '-DPYBIND11_BUILD_ABI="_cxxabi1011"' -DTORCH_EXTENSION_NAME=_C -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++17
+cuda_dlink_post_cflags = 
+ldflags = 
+
+rule compile
+  command = $cxx -MMD -MF $out.d $cflags -c $in -o $out $post_cflags
+  depfile = $out.d
+  deps = gcc
+
+
+
+
+
+build /userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/uv_unwrapper/build/temp.linux-x86_64-cpython-311/uv_unwrapper/csrc/bvh.o: compile /userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/uv_unwrapper/uv_unwrapper/csrc/bvh.cpp
+build /userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/uv_unwrapper/build/temp.linux-x86_64-cpython-311/uv_unwrapper/csrc/intersect.o: compile /userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/uv_unwrapper/uv_unwrapper/csrc/intersect.cpp
+build /userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/uv_unwrapper/build/temp.linux-x86_64-cpython-311/uv_unwrapper/csrc/unwrapper.o: compile /userhome/30/zyzhong2/controllable_diffusion/three_D/stable-fast-3d/uv_unwrapper/uv_unwrapper/csrc/unwrapper.cpp
+
+
+
+
+
+
