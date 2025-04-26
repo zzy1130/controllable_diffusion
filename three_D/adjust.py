@@ -8,10 +8,10 @@ import requests
 from io import BytesIO
 
 # === 参数设置 ===
-FRONT_IMAGE_PATH = 'input/material/silver.jpg'
-# TOP_IMAGE_PATH = 'input/top/aba_light.png'
-OUTPUT_PATH = 'glb_out/square_chopstick_pair.glb'
-TEXTURE_PATH = 'glb_out/square_combined_texture.png'
+FRONT_IMAGE_PATH = '/userhome/30/zyzhong2/controllable_diffusion/three_D/input/silver.png'
+# TOP_IMAGE_PATH = 'https://pub-3626123a908346a7a8be8d9295f44e26.r2.dev/generations/0-f8acd759-2ec9-4a12-9d10-94e06eb706d9.jpg'
+OUTPUT_PATH = '/userhome/30/zyzhong2/controllable_diffusion/three_D/glb_out/square_chopstick_pair.glb'
+TEXTURE_PATH = '/userhome/30/zyzhong2/controllable_diffusion/three_D/glb_out/square_combined_texture.png'
 
 TOTAL_HEIGHT = 20.0
 TOP_HEIGHT = 5.0

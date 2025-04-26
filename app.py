@@ -5,20 +5,13 @@ import numpy as np
 import io
 import os
 import torch
-import uuid
-from datetime import datetime
 from werkzeug.utils import secure_filename
 import torch
 from diffusers import DiffusionPipeline, LCMScheduler, HunyuanDiTPipeline, AutoPipelineForText2Image
-import matplotlib.pyplot as plt
-from transformers import DPTFeatureExtractor, DPTForDepthEstimation, DPTImageProcessor
-from controlnet_aux import OpenposeDetector, HEDdetector, PidiNetDetector
 from PIL import Image
 from transformers import pipeline
 import numpy as np
 from clip_inter import ImageInterrogator
-import argparse
-import cv2
 from lora_generate import ImageGenerator
 from diffusers import AutoPipelineForText2Image
 from flask_cors import CORS
@@ -27,6 +20,7 @@ from safetensors import safe_open
 import json
 import requests
 from three_D.adjust import gen_chop
+from three_D.stable_fast_3d.f_run import generate_toy
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -67,7 +61,7 @@ def story_to_bnw(prompt):
    
 def story_to_disney(prompt):
     url =  "https://stablediffusionapi.com/api/v3/dreambooth"  
-  
+    print('original: ', prompt)
     prompt = "ultra realistic close up portrait (("+prompt+")), blue eyes, shaved side haircut, hyper detail, cinematic lighting, magic neon, dark red city, Canon EOS R3, nikon, f/1.4, ISO 200, 1/160s, 8K, RAW, unedited, symmetrical balance, in-frame, 8K"
 
     payload = json.dumps({  
@@ -99,10 +93,11 @@ def story_to_disney(prompt):
     
     response = requests.request("POST", url, headers=headers, data=payload) 
     response_dict = json.loads(response.text)
-
+    print(response_dict)
     return response_dict['output'][0]
 
 def story_to_ink(prompt):
+    print(prompt)
     pipe = DiffusionPipeline.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0",
                                          variant="fp16",
                                          torch_dtype=torch.float16
@@ -130,6 +125,7 @@ def generate_with_story():
         # image_data = data.get('originalImage')  # Base64 or URL
         story = data.get('story')
         style = data.get('style')
+        thr_model = data.get('model')
         
         if style == 1:
             output_image = story_to_ink(story)
@@ -137,13 +133,33 @@ def generate_with_story():
             output_image = story_to_bnw(story)
         elif style == 3:
             output_image = story_to_disney(story)
-            return jsonify({"artworkUrl": output_image})
+            if thr_model == 1:
+                generate_toy(output_image)
+                with open("/userhome/30/zyzhong2/controllable_diffusion/three_D/stable_fast_3d/out/mesh.glb", "rb") as f:
+                    glb_data = base64.b64encode(f.read()).decode('utf-8')
+            else:
+                gen_chop(output_image)
+                with open("/userhome/30/zyzhong2/controllable_diffusion/three_D/glb_out/square_chopstick_pair.glb", "rb") as f:
+                    glb_data = base64.b64encode(f.read()).decode('utf-8')
+            
+            print(glb_data)
+            return jsonify({"artworkUrl": output_image, "glbData": f"data:model/gltf-binary;base64,{glb_data}"})
+        
+        out_path="/userhome/30/zyzhong2/controllable_diffusion/out/model.png"
+        output_image.save(out_path)
+        if thr_model == 1:
+            generate_toy(out_path)
+            with open("/userhome/30/zyzhong2/controllable_diffusion/three_D/stable_fast_3d/out/mesh.glb", "rb") as f:
+                glb_data = base64.b64encode(f.read()).decode('utf-8')
+        else:
+            gen_chop(out_path)
+            with open("/userhome/30/zyzhong2/controllable_diffusion/three_D/glb_out/square_chopstick_pair.glb", "rb") as f:
+                glb_data = base64.b64encode(f.read()).decode('utf-8')
 
-        # 将输出图像转换为 Base64
         buffered = io.BytesIO()
         output_image.save(buffered, format="PNG")
         output_image_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-        return jsonify({"artworkUrl": f"data:image/png;base64,{output_image_b64}"})
+        return jsonify({"artworkUrl": f"data:image/png;base64,{output_image_b64}", "glbData": f"data:model/gltf-binary;base64,{glb_data}"})
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -159,6 +175,7 @@ def generate_from_image():
         print(data)
         image_data = data.get('image')  # Base64 or URL
         style = data.get('style')
+        thr_model=data.get('model')
         image_data = image_data.split(',')[1]
         # story = data.get('story')
         image = Image.open(io.BytesIO(base64.b64decode(image_data)))
@@ -182,18 +199,33 @@ def generate_from_image():
             output_image = story_to_bnw(prompt)
         elif style == 3:
             output_image = story_to_disney(prompt)
-            gen_chop(output_image)
+            if thr_model == 1:
+                generate_toy(output_image)
+                with open("/userhome/30/zyzhong2/controllable_diffusion/three_D/stable_fast_3d/out/mesh.glb", "rb") as f:
+                    glb_data = base64.b64encode(f.read()).decode('utf-8')
+            else:
+                gen_chop(output_image)
+                with open("/userhome/30/zyzhong2/controllable_diffusion/three_D/glb_out/square_chopstick_pair.glb", "rb") as f:
+                    glb_data = base64.b64encode(f.read()).decode('utf-8')
+            
+            print(glb_data)
+            return jsonify({"artworkUrl": output_image, "glbData": f"data:model/gltf-binary;base64,{glb_data}"})
+        
+        out_path="/userhome/30/zyzhong2/controllable_diffusion/out/model.png"
+        output_image.save(out_path)
+        if thr_model == 1:
+            generate_toy(out_path)
+            with open("/userhome/30/zyzhong2/controllable_diffusion/three_D/stable_fast_3d/out/mesh.glb", "rb") as f:
+                glb_data = base64.b64encode(f.read()).decode('utf-8')
+        else:
+            gen_chop(out_path)
             with open("/userhome/30/zyzhong2/controllable_diffusion/three_D/glb_out/square_chopstick_pair.glb", "rb") as f:
                 glb_data = base64.b64encode(f.read()).decode('utf-8')
-            #output_dir: /userhome/30/zyzhong2/controllable_diffusion/three_D/glb_out/square_chopstick_pair.glb
-            return jsonify({"artworkUrl": output_image, "glb_data": glb_data})
-        gen_chop(output_image)
-        with open("/userhome/30/zyzhong2/controllable_diffusion/three_D/glb_out/square_chopstick_pair.glb", "rb") as f:
-            glb_data = base64.b64encode(f.read()).decode('utf-8')
+
         buffered = io.BytesIO()
         output_image.save(buffered, format="PNG")
         output_image_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-        return jsonify({"artworkUrl": f"data:image/png;base64,{output_image_b64}", "glbData": glb_data})
+        return jsonify({"artworkUrl": f"data:image/png;base64,{output_image_b64}", "glbData": f"data:model/gltf-binary;base64,{glb_data}"})
         
     
     except Exception as e:
